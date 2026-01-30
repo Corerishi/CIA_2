@@ -1,21 +1,32 @@
 import streamlit as st
 import pandas as pd
-import geopandas as gpd
-import matplotlib.pyplot as plt
 import plotly.express as px
+import os
 
 st.set_page_config(page_title="Silver Analytics Hub", layout="wide")
 
+def fix_arrow_types(df):
+    for col in df.columns:
+        if df[col].dtype == 'object' or pd.api.types.is_string_dtype(df[col]):
+            df[col] = df[col].astype(str)
+    return df
+
 @st.cache_data
 def load_data():
-    
     prices_df = pd.read_csv('historical_silver_price.csv')
     sales_df = pd.read_csv('state_wise_silver_purchased_kg.csv')
+    
+    prices_df = fix_arrow_types(prices_df)
+    sales_df = fix_arrow_types(sales_df)
     
     prices_df['Date'] = pd.to_datetime(prices_df['Month'] + ' ' + prices_df['Year'].astype(str))
     return prices_df, sales_df
 
-prices_df, sales_df = load_data()
+try:
+    prices_df, sales_df = load_data()
+except Exception as e:
+    st.error(f"Error: {e}")
+    st.stop()
 
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Go to:", ["Silver Price Calculator", "Silver Sales Dashboard"])
@@ -33,7 +44,6 @@ if page == "Silver Price Calculator":
     total_cost_inr = total_grams * price_per_gram
     
     with col2:
-        st.subheader("Calculation Result")
         currency = st.selectbox("Currency Selection", ["INR", "USD"])
         rate = 0.012 
         final_val = total_cost_inr if currency == "INR" else total_cost_inr * rate
@@ -58,18 +68,19 @@ if page == "Silver Price Calculator":
 else:
     st.title("Silver Sales Insights")
 
-    st.subheader("India State-wise Sales (Choropleth)")
-    try:
-        india_geo = gpd.read_file("india_state_geo.json")
-        merged = india_geo.merge(sales_df, left_on="ST_NM", right_on="State")
-        
-        fig, ax = plt.subplots(figsize=(10, 8))
-        merged.plot(column='Silver_Purchased_kg', cmap='Blues', legend=True, 
-                    edgecolor='black', linewidth=0.3, ax=ax)
-        plt.axis('off')
-        st.pyplot(fig)
-    except:
-        st.error("Error")
+    st.subheader("India State-wise Sales Analysis")
+    
+    fig_map = px.choropleth(
+        sales_df,
+        geojson="https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d1fabac573faba4f57c/raw/00c01f8029584282305089f25244514a6e873a00/india_states.geojson",
+        featureidkey='properties.st_nm',
+        locations='State',
+        color='Silver_Purchased_kg',
+        color_continuous_scale="Reds",
+        scope="asia"
+    )
+    fig_map.update_geos(fitbounds="locations", visible=False)
+    st.plotly_chart(fig_map, use_container_width=True)
 
     st.subheader("Top 5 States (Highest Sales)")
     top_5 = sales_df.sort_values(by='Silver_Purchased_kg', ascending=False).head(5)

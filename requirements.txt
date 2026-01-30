@@ -3,4 +3,5 @@ matplotlib
 pandas
 plotly
 streamlit
-pyarrow==14.0.1
+pyarrow
+streamlit

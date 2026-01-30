@@ -57,19 +57,28 @@ if page == "Silver Price Calculator":
 
 else:
     st.title("Silver Sales Insights")
-
-    st.subheader("India State-wise Sales (Choropleth)")
+    st.subheader("India State-wise Sales (Local GeoJSON)")
+    
     try:
-        india_geo = gpd.read_file("india_state_geo.json")
-        merged = india_geo.merge(sales_df, left_on="ST_NM", right_on="State")
+        india_geo = gpd.read_file("india_state.geojson")
+        
+        for col in india_geo.columns:
+            if india_geo[col].dtype == 'object':
+                india_geo[col] = india_geo[col].astype(str)
+        
+        state_key = 'ST_NM' if 'ST_NM' in india_geo.columns else 'NAME_1'
+        india_geo[state_key] = india_geo[state_key].str.strip()
+        
+        merged = india_geo.merge(sales_df, left_on=state_key, right_on="State")
         
         fig, ax = plt.subplots(figsize=(10, 8))
-        merged.plot(column='Silver_Purchased_kg', cmap='Blues', legend=True, 
+        merged.plot(column='Silver_Purchased_kg', cmap='OrRd', legend=True, 
                     edgecolor='black', linewidth=0.3, ax=ax)
         plt.axis('off')
         st.pyplot(fig)
-    except:
-        st.error("Error")
+        
+    except Exception as e:
+        st.error(f"Map Error: {e}")
 
     st.subheader("Top 5 States (Highest Sales)")
     top_5 = sales_df.sort_values(by='Silver_Purchased_kg', ascending=False).head(5)
@@ -80,4 +89,5 @@ else:
     
     st.dataframe(jan_df[['Year', 'Month', 'Silver_Price_INR_per_kg']])
     
+
     st.line_chart(jan_df.set_index('Year')['Silver_Price_INR_per_kg'])

@@ -3,6 +3,4 @@ matplotlib
 pandas
 plotly
 streamlit
-altair<5
-standard-imghdr
-
+pyarrow==14.0.1

@@ -1,4 +1,5 @@
-geopandas,
-matplotlib,
-pandas,
+geopandas
+matplotlib
+pandas
 plotly
+streamlit

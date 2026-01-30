@@ -68,19 +68,6 @@ if page == "Silver Price Calculator":
 else:
     st.title("Silver Sales Insights")
 
-    st.subheader("India State-wise Sales Analysis")
-    
-    fig_map = px.choropleth(
-        sales_df,
-        geojson="https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d1fabac573faba4f57c/raw/00c01f8029584282305089f25244514a6e873a00/india_states.geojson",
-        featureidkey='properties.st_nm',
-        locations='State',
-        color='Silver_Purchased_kg',
-        color_continuous_scale="Reds",
-        scope="asia"
-    )
-    fig_map.update_geos(fitbounds="locations", visible=False)
-    st.plotly_chart(fig_map, use_container_width=True)
 
     st.subheader("Top 5 States (Highest Sales)")
     top_5 = sales_df.sort_values(by='Silver_Purchased_kg', ascending=False).head(5)
